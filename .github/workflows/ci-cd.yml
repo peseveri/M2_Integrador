@@ -15,9 +15,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      
+      # Paso 1: Copia el archivo CSV a la carpeta raw_data
+      # Este paso es crucial para que los siguientes pasos lo encuentren.
+      - name: Copy raw data file to raw_data folder
+        run: cp Avance2_3_4/data_sources/AB_NYC.csv Avance2_3_4/raw_data/
 
-      # Paso 1: Crea los directorios de datos vacíos en el sistema de archivos del runner
-      # Esto es CRUCIAL para que los volúmenes de Docker puedan escribir en ellos
+      # Paso 2: Crea los directorios de salida vacíos en el sistema de archivos del runner
       - name: Create data directories
         run: |
           mkdir -p Avance2_3_4/raw_data
@@ -27,21 +31,21 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Paso 2: Construye las imágenes de Docker para el pipeline ETL
-      # ¡CORRECCIÓN AQUÍ! Se añade 'working-directory' para que las rutas relativas funcionen.
+      # Paso 3: Construye las imágenes de Docker para el pipeline ETL
       - name: Build Docker images
         working-directory: Avance2_3_4
         run: |
           docker build -f Dockerfile.ingesta -t etl-ingesta:v1 .
           docker build -f Dockerfile.transform -t etl-transform:v1 .
 
-      # Paso 3: Ejecuta la tarea de ingesta, montando el volumen
-      # El contenedor de ingesta ahora escribirá directamente en Avance2_3_4/raw_data del runner
+      # Paso 4: Ejecuta la tarea de ingesta, montando el volumen
+      # ¡CORRECCIÓN AQUÍ! El directorio raw_data del host se monta en /app/data_sources del contenedor.
       - name: Run Ingest Data Task
-        run: docker run --rm -v ${{ github.workspace }}/Avance2_3_4/raw_data:/app/data etl-ingesta:v1
+        run: docker run --rm -v ${{ github.workspace }}/Avance2_3_4/raw_data:/app/data_sources etl-ingesta:v1
 
-      # Paso 4: Ejecuta la tarea de transformación, montando los volúmenes de entrada y salida
-      # El contenedor de transformación leerá de raw_data y escribirá en silver y gold del runner
+      # Paso 5: Ejecuta la tarea de transformación, montando los volúmenes
+      # El contenedor de transformación leerá de raw_data y escribirá en silver y gold.
+      # Se usa la ruta original /app/data que espera el script transform.py
       - name: Run Transform Data Task
         run: docker run --rm -v ${{ github.workspace }}/Avance2_3_4/raw_data:/app/data -v ${{ github.workspace }}/Avance2_3_4/silver_data:/app/silver_data -v ${{ github.workspace }}/Avance2_3_4/gold_data:/app/gold_data etl-transform:v1
 
@@ -55,11 +59,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install pandas pyarrow
 
-      # Paso 5: Ejecuta las pruebas de validación, que ahora encontrarán los archivos
+      # Paso 6: Ejecuta las pruebas de validación
       - name: Run data validation tests
         run: python Avance2_3_4/test_pipeline.py
 
-      # Paso 6: Limpia los contenedores (esto es opcional, ya que usamos --rm)
+      # Paso 7: Limpia los contenedores
       - name: Clean up Docker containers
         if: always()
         run: docker compose -f Avance2_3_4/docker-compose.yml down
