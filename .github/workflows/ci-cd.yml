@@ -24,6 +24,9 @@ jobs:
           mkdir -p Avance2_3_4/gold_data
 
       # Paso 2: Copia el archivo CSV a la carpeta de datos de origen
+      - name: Copy raw data file to data_sources folder
+        run: cp Avance2_3_4/data_sources/AB_NYC.csv Avance2_3_4/data_sources/
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -37,7 +40,8 @@ jobs:
       # Paso 4: Ejecuta la tarea de ingesta, montando los volúmenes y pasando variables de entorno
       # Se montan las carpetas del host en las rutas que el script de ingesta espera
       - name: Run Ingest Data Task
-        run: docker run --rm \
+        run: |
+          docker run --rm \
           -v ${{ github.workspace }}/Avance2_3_4/data_sources:/app/data_sources \
           -v ${{ github.workspace }}/Avance2_3_4/raw_data:/app/raw_data \
           --env CSV_SOURCE_PATH=/app/data_sources \
@@ -48,7 +52,8 @@ jobs:
       # Se montan los directorios de datos para que el script de transformación acceda
       # a los datos recién creados por la tarea de ingesta.
       - name: Run Transform Data Task
-        run: docker run --rm \
+        run: |
+          docker run --rm \
           -v ${{ github.workspace }}/Avance2_3_4/raw_data:/app/raw_data \
           -v ${{ github.workspace }}/Avance2_3_4/silver_data:/app/silver_data \
           -v ${{ github.workspace }}/Avance2_3_4/gold_data:/app/gold_data \
