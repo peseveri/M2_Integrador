@@ -19,13 +19,14 @@ jobs:
       # Paso 1: Crea los directorios de salida vacíos en el sistema de archivos del runner
       - name: Create data directories
         run: |
+          mkdir -p Avance2_3_4/data_sources
           mkdir -p Avance2_3_4/raw_data
           mkdir -p Avance2_3_4/silver_data
           mkdir -p Avance2_3_4/gold_data
 
       # Paso 2: Copia el archivo CSV a la carpeta raw_data
       - name: Copy raw data file to raw_data folder
-        run: cp Avance2_3_4/data_sources/AB_NYC.csv Avance2_3_4/raw_data/
+        run: cp Avance2_3_4/data_sources/AB_NYC.csv Avance2_3_4/data_sources/
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -41,7 +42,7 @@ jobs:
       # ¡CORRECCIÓN AQUÍ! Se monta el directorio de origen a /app/data_sources,
       # y el directorio de destino a /app/data, tal como lo esperan los scripts.
       - name: Run Ingest Data Task
-        run: docker run --rm -v ${{ github.workspace }}/Avance2_3_4/raw_data:/app/data etl-ingesta:v1
+        run: docker run --rm -v ${{ github.workspace }}/Avance2_3_4/data_sources:/app/data_sources etl-ingesta:v1
 
       # Paso 5: Ejecuta la tarea de transformación, montando los volúmenes
       # Se montan las carpetas de datos de forma consistente para que el script de Spark las encuentre.
