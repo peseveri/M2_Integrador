@@ -19,13 +19,12 @@ jobs:
       # Paso 1: Crea los directorios de salida vacíos en el sistema de archivos del runner
       - name: Create data directories
         run: |
-          mkdir -p Avance2_3_4/data_sources
           mkdir -p Avance2_3_4/raw_data
           mkdir -p Avance2_3_4/silver_data
           mkdir -p Avance2_3_4/gold_data
 
-      # Paso 2: Copia el archivo CSV a la carpeta raw_data
-      - name: Copy raw data file to raw_data folder
+      # Paso 2: Copia el archivo CSV a la carpeta de datos de origen
+      - name: Copy raw data file to data_sources folder
         run: cp Avance2_3_4/data_sources/AB_NYC.csv Avance2_3_4/data_sources/
 
       - name: Set up Docker Buildx
@@ -38,16 +37,28 @@ jobs:
           docker build -f Dockerfile.ingesta -t etl-ingesta:v1 .
           docker build -f Dockerfile.transform -t etl-transform:v1 .
 
-      # Paso 4: Ejecuta la tarea de ingesta, montando el volumen
-      # ¡CORRECCIÓN AQUÍ! Se monta el directorio de origen a /app/data_sources,
-      # y el directorio de destino a /app/data, tal como lo esperan los scripts.
+      # Paso 4: Ejecuta la tarea de ingesta, montando los volúmenes y pasando variables de entorno
+      # Se montan las carpetas del host en las rutas que el script de ingesta espera
       - name: Run Ingest Data Task
-        run: docker run --rm -v ${{ github.workspace }}/Avance2_3_4/data_sources:/app/data_sources etl-ingesta:v1
+        run: docker run --rm \
+          -v ${{ github.workspace }}/Avance2_3_4/data_sources:/app/data_sources \
+          -v ${{ github.workspace }}/Avance2_3_4/raw_data:/app/raw_data \
+          --env CSV_SOURCE_PATH=/app/data_sources \
+          --env RAW_DATA_DEST_PATH=/app/raw_data \
+          etl-ingesta:v1
 
-      # Paso 5: Ejecuta la tarea de transformación, montando los volúmenes
-      # Se montan las carpetas de datos de forma consistente para que el script de Spark las encuentre.
+      # Paso 5: Ejecuta la tarea de transformación, montando los volúmenes y pasando variables de entorno
+      # Se montan los directorios de datos para que el script de transformación acceda
+      # a los datos recién creados por la tarea de ingesta.
       - name: Run Transform Data Task
-        run: docker run --rm -v ${{ github.workspace }}/Avance2_3_4/raw_data:/app/data -v ${{ github.workspace }}/Avance2_3_4/silver_data:/app/silver_data -v ${{ github.workspace }}/Avance2_3_4/gold_data:/app/gold_data etl-transform:v1
+        run: docker run --rm \
+          -v ${{ github.workspace }}/Avance2_3_4/raw_data:/app/raw_data \
+          -v ${{ github.workspace }}/Avance2_3_4/silver_data:/app/silver_data \
+          -v ${{ github.workspace }}/Avance2_3_4/gold_data:/app/gold_data \
+          --env RAW_DATA_PATH=/app/raw_data \
+          --env SILVER_DATA_PATH=/app/silver_data \
+          --env GOLD_DATA_PATH=/app/gold_data \
+          etl-transform:v1
 
       - name: Set up Python for tests
         uses: actions/setup-python@v5
