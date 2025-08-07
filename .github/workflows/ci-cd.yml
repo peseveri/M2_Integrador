@@ -16,17 +16,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      # Paso 1: Copia el archivo CSV a la carpeta raw_data
-      # Este paso es crucial para que los siguientes pasos lo encuentren.
-      - name: Copy raw data file to raw_data folder
-        run: cp Avance2_3_4/data_sources/AB_NYC.csv Avance2_3_4/raw_data/
-
-      # Paso 2: Crea los directorios de salida vacíos en el sistema de archivos del runner
+      # Paso 1: Crea los directorios de salida vacíos en el sistema de archivos del runner
+      # ¡CORRECCIÓN AQUÍ! Este paso se mueve al principio para garantizar que las carpetas existan.
       - name: Create data directories
         run: |
           mkdir -p Avance2_3_4/raw_data
           mkdir -p Avance2_3_4/silver_data
           mkdir -p Avance2_3_4/gold_data
+
+      # Paso 2: Copia el archivo CSV a la carpeta raw_data
+      - name: Copy raw data file to raw_data folder
+        run: cp Avance2_3_4/data_sources/AB_NYC.csv Avance2_3_4/raw_data/
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -39,13 +39,10 @@ jobs:
           docker build -f Dockerfile.transform -t etl-transform:v1 .
 
       # Paso 4: Ejecuta la tarea de ingesta, montando el volumen
-      # ¡CORRECCIÓN AQUÍ! El directorio raw_data del host se monta en /app/data_sources del contenedor.
       - name: Run Ingest Data Task
         run: docker run --rm -v ${{ github.workspace }}/Avance2_3_4/raw_data:/app/data_sources etl-ingesta:v1
 
       # Paso 5: Ejecuta la tarea de transformación, montando los volúmenes
-      # El contenedor de transformación leerá de raw_data y escribirá en silver y gold.
-      # Se usa la ruta original /app/data que espera el script transform.py
       - name: Run Transform Data Task
         run: docker run --rm -v ${{ github.workspace }}/Avance2_3_4/raw_data:/app/data -v ${{ github.workspace }}/Avance2_3_4/silver_data:/app/silver_data -v ${{ github.workspace }}/Avance2_3_4/gold_data:/app/gold_data etl-transform:v1
 
