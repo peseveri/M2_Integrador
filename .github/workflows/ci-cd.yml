@@ -16,30 +16,33 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Paso 1: Crea los directorios de datos vacíos en el sistema de archivos del runner
+      # Esto es CRUCIAL para que los volúmenes de Docker puedan escribir en ellos
+      - name: Create data directories
+        run: |
+          mkdir -p Avance2_3_4/raw_data
+          mkdir -p Avance2_3_4/silver_data
+          mkdir -p Avance2_3_4/gold_data
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Paso 1: Levantar todos los servicios con Airflow
-      - name: Start Docker Compose with Airflow
-        run: docker compose -f Avance2_3_4/docker-compose.yml up --build -d
+      # Paso 2: Construye las imágenes de Docker para el pipeline ETL
+      - name: Build Docker images
+        run: |
+          docker build -f Avance2_3_4/Dockerfile.ingesta -t etl-ingesta:v1 .
+          docker build -f Avance2_3_4/Dockerfile.transform -t etl-transform:v1 .
 
-      # Paso 2: Esperar a que el webserver de Airflow esté saludable
-      # Esto asegura que los comandos de Airflow funcionen
-      - name: Wait for Airflow Webserver to be ready
-        run: |
-          echo "Esperando a que Airflow esté listo..."
-          sleep 60
-          
-      # Paso 3: Disparar el DAG desde el contenedor del webserver de Airflow
-      # Ejecuta el comando Airflow CLI dentro del contenedor "airflow-webserver"
-      - name: Trigger Airflow DAG
-        run: |
-          docker compose -f Avance2_3_4/docker-compose.yml exec -T airflow-webserver airflow dags trigger etl_pipeline_docker
-          # Esperar a que el DAG termine. Esto puede variar, 
-          # por lo que un tiempo de espera fijo es un buen punto de partida.
-          sleep 120
-      
-      # Paso 4: Instalar las dependencias de Python para el script de prueba
+      # Paso 3: Ejecuta la tarea de ingesta, montando el volumen
+      # El contenedor de ingesta ahora escribirá directamente en Avance2_3_4/raw_data del runner
+      - name: Run Ingest Data Task
+        run: docker run --rm -v ${{ github.workspace }}/Avance2_3_4/raw_data:/app/data etl-ingesta:v1
+
+      # Paso 4: Ejecuta la tarea de transformación, montando los volúmenes de entrada y salida
+      # El contenedor de transformación leerá de raw_data y escribirá en silver y gold del runner
+      - name: Run Transform Data Task
+        run: docker run --rm -v ${{ github.workspace }}/Avance2_3_4/raw_data:/app/data -v ${{ github.workspace }}/Avance2_3_4/silver_data:/app/silver_data -v ${{ github.workspace }}/Avance2_3_4/gold_data:/app/gold_data etl-transform:v1
+
       - name: Set up Python for tests
         uses: actions/setup-python@v5
         with:
@@ -50,11 +53,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install pandas pyarrow
 
-      # Paso 5: Ejecutar las pruebas de validación de datos
+      # Paso 5: Ejecuta las pruebas de validación, que ahora encontrarán los archivos
       - name: Run data validation tests
         run: python Avance2_3_4/test_pipeline.py
 
-      # Paso 6: Limpiar los contenedores
+      # Paso 6: Limpia los contenedores (esto es opcional, ya que usamos --rm)
       - name: Clean up Docker containers
         if: always()
         run: docker compose -f Avance2_3_4/docker-compose.yml down
