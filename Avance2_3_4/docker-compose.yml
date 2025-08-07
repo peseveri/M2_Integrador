@@ -24,14 +24,13 @@ services:
         condition: service_healthy
     ports:
       - "8080:8080"
-    user: "${AIRFLOW_UID}"
     volumes:
       - ./dags:/opt/airflow/dags
       - ./scripts:/opt/airflow/scripts
       - ./raw_data:/opt/airflow/raw_data
       - ./silver_data:/opt/airflow/silver_data
       - ./gold_data:/opt/airflow/gold_data
-      - /var/run/docker.sock:/var/run/docker.sock # <--- ¡Añadido aquí!
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - AIRFLOW_VAR_RAW_DATA_PATH=/opt/airflow/raw_data
       - AIRFLOW_VAR_SILVER_DATA_PATH=/opt/airflow/silver_data
@@ -39,6 +38,7 @@ services:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
       - AIRFLOW__WEBSERVER__SECRET_KEY=mi-clave-secreta
+      - AIRFLOW_UID=50000
     command: >
       bash -c "airflow db init && 
       airflow users create --username admin --firstname admin --lastname admin --role Admin --email admin@example.com --password admin && 
@@ -57,14 +57,13 @@ services:
     depends_on:
       airflow-webserver:
         condition: service_healthy
-    user: "${AIRFLOW_UID}"
     volumes:
       - ./dags:/opt/airflow/dags
       - ./scripts:/opt/airflow/scripts
       - ./raw_data:/opt/airflow/raw_data
       - ./silver_data:/opt/airflow/silver_data
       - ./gold_data:/opt/airflow/gold_data
-      - /var/run/docker.sock:/var/run/docker.sock # <--- ¡Añadido aquí!
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - AIRFLOW_VAR_RAW_DATA_PATH=/opt/airflow/raw_data
       - AIRFLOW_VAR_SILVER_DATA_PATH=/opt/airflow/silver_data
@@ -72,5 +71,23 @@ services:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
       - AIRFLOW__WEBSERVER__SECRET_KEY=mi-clave-secreta
+      - AIRFLOW_UID=50000
     command: scheduler
     restart: always
+    
+  jupyter-notebook:
+    build:
+      context: .
+      dockerfile: Dockerfile.jupyter
+    container_name: jupyter-notebook
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./notebooks:/app/notebooks
+      - ./silver_data:/app/silver_data
+      - ./gold_data:/app/gold_data
+    working_dir: /app/notebooks
+    depends_on:
+      - airflow-webserver
+      - airflow-scheduler
+

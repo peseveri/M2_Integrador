@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import sys
-# ¡CORRECCIÓN AQUÍ! Las rutas deben ser relativas a la carpeta del proyecto
+
 PROJECT_ROOT = "Avance2_3_4"
 SILVER_DATA_PATH = os.path.join(PROJECT_ROOT, "silver_data", "cleaned_airbnb_listings")
 GOLD_DATA_PATH_PRECIOS = os.path.join(PROJECT_ROOT, "gold_data", "precios_por_area")

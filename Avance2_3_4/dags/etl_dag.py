@@ -20,7 +20,7 @@ with DAG(
     'etl_pipeline_docker',
     default_args=default_args,
     description='Un DAG para ejecutar el pipeline ETL con Docker.',
-    start_date=datetime(2025, 1, 1), # Se recomienda una fecha fija para evitar problemas con `datetime.now()`
+    start_date=datetime(2025, 1, 1),
     schedule_interval=None,
     tags=['etl', 'docker'],
 ) as dag:

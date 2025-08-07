@@ -4,17 +4,24 @@ import sys
 import os
 import datetime
 
+# --- Configuración del Logger ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Obtiene las rutas de los volúmenes de las variables de entorno o usa valores predeterminados
-RAW_DATA_PATH = os.getenv("RAW_DATA_PATH", "/app/raw_data")
-CSV_SOURCE_PATH = os.getenv("CSV_SOURCE_PATH", "/app/data_sources")
-
+# --- Variables de Configuración ---
+# La ruta ahora apunta directamente al volumen compartido en el contenedor
+SOURCE_FOLDER = "/app/data_sources"
+RAW_FOLDER = "/app/raw_data"
 CSV_FILE = "AB_NYC.csv"
-CSV_FILE_PATH = os.path.join(CSV_SOURCE_PATH, CSV_FILE)
+CSV_FILE_PATH = os.path.join(SOURCE_FOLDER, CSV_FILE)
 MIN_FILE_SIZE_BYTES = 100
 
+# --- Funciones del Pipeline ---
+
 def extraer_datos_csv(ruta_archivo):
+    """
+    Extrae datos de un archivo CSV y los carga en un DataFrame de pandas.
+    Incluye manejo de errores para FileNotFoundError y otros.
+    """
     try:
         logging.info(f"Iniciando la extracción del archivo: {ruta_archivo}")
         df = pd.read_csv(ruta_archivo)
@@ -43,10 +50,7 @@ def guardar_datos_raw(df, carpeta_destino):
     try:
         os.makedirs(carpeta_destino, exist_ok=True)
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        
-        # ¡IMPORTANTE! El nombre del archivo debe coincidir con el que busca el script de transformación
         nombre_archivo = f"ab_nyc_raw_processed_{timestamp}.csv"
-        
         ruta_completa = os.path.join(carpeta_destino, nombre_archivo)
         df.to_csv(ruta_completa, index=False, encoding='utf-8')
         logging.info(f"Datos guardados exitosamente en la capa Raw: {ruta_completa}")
@@ -67,6 +71,6 @@ if __name__ == "__main__":
     df_raw = extraer_datos_csv(CSV_FILE_PATH)
     if df_raw is not None:
         validar_calidad_datos(df_raw)
-        ruta_guardado = guardar_datos_raw(df_raw, RAW_DATA_PATH)
+        ruta_guardado = guardar_datos_raw(df_raw, RAW_FOLDER)
         if ruta_guardado:
             verificar_carga_raw(ruta_guardado, MIN_FILE_SIZE_BYTES)
