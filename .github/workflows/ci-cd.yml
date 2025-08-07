@@ -44,14 +44,10 @@ jobs:
         run: docker run --rm -v ${{ github.workspace }}/Avance2_3_4/raw_data:/app/data_sources etl-ingesta:v1
 
       # Paso 5: Ejecuta la tarea de transformación, montando los volúmenes
-      # ¡CORRECCIÓN AQUÍ! Se monta raw_data a /app/raw_data para que el script lo encuentre.
-      # También se montan los directorios de salida de forma consistente.
+      # ¡CORRECCIÓN AQUÍ! Se ha corregido la sintaxis del comando de `docker run`
+      # para evitar el error de "invalid reference format".
       - name: Run Transform Data Task
-        run: docker run --rm \
-          -v ${{ github.workspace }}/Avance2_3_4/raw_data:/app/raw_data \
-          -v ${{ github.workspace }}/Avance2_3_4/silver_data:/app/silver_data \
-          -v ${{ github.workspace }}/Avance2_3_4/gold_data:/app/gold_data \
-          etl-transform:v1
+        run: docker run --rm -v ${{ github.workspace }}/Avance2_3_4/raw_data:/app/raw_data -v ${{ github.workspace }}/Avance2_3_4/silver_data:/app/silver_data -v ${{ github.workspace }}/Avance2_3_4/gold_data:/app/gold_data etl-transform:v1
 
       - name: Set up Python for tests
         uses: actions/setup-python@v5
