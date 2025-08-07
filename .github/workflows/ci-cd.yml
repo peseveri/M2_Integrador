@@ -46,7 +46,7 @@ jobs:
       # Paso 5: Ejecuta la tarea de transformación, montando los volúmenes
       # Se montan las carpetas de datos de forma consistente para que el script de Spark las encuentre.
       - name: Run Transform Data Task
-        run: docker run --rm -v ${{ github.workspace }}/Avance2_3_4/raw_data:/app/data -v ${{ github.workspace }}/Avance2_3_4/silver_data:/app/silver_data -v ${{ github.workspace }}/Avance2_3_4/gold_data:/app/gold_data etl-transform:v1
+        run: docker run --rm -v ${{ github.workspace }}/Avance2_3_4/raw_data:/app/data_sources -v ${{ github.workspace }}/Avance2_3_4/silver_data:/app/silver_data -v ${{ github.workspace }}/Avance2_3_4/gold_data:/app/gold_data etl-transform:v1
 
       - name: Set up Python for tests
         uses: actions/setup-python@v5
