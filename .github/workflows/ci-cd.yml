@@ -28,10 +28,12 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       # Paso 2: Construye las imágenes de Docker para el pipeline ETL
+      # ¡CORRECCIÓN AQUÍ! Se añade 'working-directory' para que las rutas relativas funcionen.
       - name: Build Docker images
+        working-directory: Avance2_3_4
         run: |
-          docker build -f Avance2_3_4/Dockerfile.ingesta -t etl-ingesta:v1 .
-          docker build -f Avance2_3_4/Dockerfile.transform -t etl-transform:v1 .
+          docker build -f Dockerfile.ingesta -t etl-ingesta:v1 .
+          docker build -f Dockerfile.transform -t etl-transform:v1 .
 
       # Paso 3: Ejecuta la tarea de ingesta, montando el volumen
       # El contenedor de ingesta ahora escribirá directamente en Avance2_3_4/raw_data del runner
