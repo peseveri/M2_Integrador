@@ -21,16 +21,16 @@ jobs:
 
       # --- CORRECCIÓN AQUÍ: Usamos la ruta completa de docker-compose ---
       - name: Start Docker Compose
-        run: /usr/local/bin/docker-compose -f Avance2_3_4/docker-compose.yml up --build -d
+        run: docker-compose -f Avance2_3_4/docker-compose.yml up --build -d
 
       - name: Wait for Postgres to be ready
         run: sleep 20
 
       - name: Run Ingest Data Task
-        run: /usr/local/bin/docker-compose -f Avance2_3_4/docker-compose.yml run --rm airflow-ingest
+        run: docker-compose -f Avance2_3_4/docker-compose.yml run --rm airflow-ingest
 
       - name: Run Transform Data Task
-        run: /usr/local/bin/docker-compose -f Avance2_3_4/docker-compose.yml run --rm airflow-transform
+        run: docker-compose -f Avance2_3_4/docker-compose.yml run --rm airflow-transform
       
       - name: Set up Python for tests
         uses: actions/setup-python@v5
@@ -48,4 +48,4 @@ jobs:
       # --- CORRECCIÓN AQUÍ: Usamos la ruta completa de docker-compose ---
       - name: Clean up Docker containers
         if: always()
-        run: /usr/local/bin/docker-compose -f Avance2_3_4/docker-compose.yml down
+        run: docker-compose -f Avance2_3_4/docker-compose.yml down
