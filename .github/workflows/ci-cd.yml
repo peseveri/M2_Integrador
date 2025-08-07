@@ -1,0 +1,66 @@
+    # Nombre del flujo de trabajo
+    name: Pipeline ETL CI/CD
+
+    # Eventos que disparan el flujo de trabajo
+    on:
+      push:
+        branches:
+          - main
+      pull_request:
+        branches:
+          - main
+
+    # Un solo trabajo para construir y probar el pipeline
+    jobs:
+      build-and-test:
+        runs-on: ubuntu-latest
+
+        steps:
+          # Paso 1: Clonar el repositorio
+          - name: Checkout code
+            uses: actions/checkout@v4
+
+          # Paso 2: Configurar Docker Buildx para construir las imágenes
+          - name: Set up Docker Buildx
+            uses: docker/setup-buildx-action@v3
+
+          # Paso 3: Configurar Docker Compose
+          # ¡CORRECCIÓN AQUÍ! Se usa el archivo dentro de la subcarpeta
+          - name: Start Docker Compose
+            run: docker-compose -f Avance2_3_4/docker-compose.yml up --build -d
+
+          # Paso 4: Esperar a que el contenedor de Postgres esté saludable
+          - name: Wait for Postgres to be ready
+            run: sleep 20
+
+          # Paso 5: Ejecutar la tarea de ingesta de datos
+          # ¡CORRECCIÓN AQUÍ! Se usan los archivos dentro de la subcarpeta
+          - name: Run Ingest Data Task
+            run: docker-compose -f Avance2_3_4/docker-compose.yml run --rm airflow-ingest
+
+          # Paso 6: Ejecutar la tarea de transformación de datos
+          # ¡CORRECCIÓN AQUÍ! Se usan los archivos dentro de la subcarpeta
+          - name: Run Transform Data Task
+            run: docker-compose -f Avance2_3_4/docker-compose.yml run --rm airflow-transform
+          
+          # Paso 7: Instalar las dependencias de Python para el script de prueba
+          - name: Set up Python for tests
+            uses: actions/setup-python@v5
+            with:
+              python-version: '3.9'
+
+          - name: Install Python dependencies
+            run: |
+              python -m pip install --upgrade pip
+              pip install pandas pyarrow
+
+          # Paso 8: Ejecutar las pruebas de validación de datos
+          # ¡CORRECCIÓN AQUÍ! Se ajusta la ruta del script de prueba
+          - name: Run data validation tests
+            run: python Avance2_3_4/test_pipeline.py
+
+          # Paso 9: Limpiar los contenedores
+          - name: Clean up Docker containers
+            if: always()
+            run: docker-compose -f Avance2_3_4/docker-compose.yml down
+    
