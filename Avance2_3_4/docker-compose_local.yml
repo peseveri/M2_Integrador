@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  ingesta_datos:
+    build:
+      context: .
+      dockerfile: Dockerfile.ingesta
+    volumes:
+      - ./raw_data:/app/data
+    #command: tail -f /dev/null
+
+  transform:
+    build:
+      context: .
+      dockerfile: Dockerfile.transform
+    volumes:
+
+      - ./raw_data:/app/data
+    depends_on:
+      - ingesta_datos
+

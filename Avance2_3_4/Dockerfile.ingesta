@@ -1,0 +1,6 @@
+FROM python:3.9-slim
+WORKDIR /app
+COPY ./scripts/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY ./scripts/ingesta_datos.py .
+CMD ["python", "ingesta_datos.py"]
