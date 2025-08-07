@@ -24,9 +24,6 @@ jobs:
           mkdir -p Avance2_3_4/gold_data
 
       # Paso 2: Copia el archivo CSV a la carpeta de datos de origen
-      - name: Copy raw data file to data_sources folder
-        run: cp Avance2_3_4/data_sources/AB_NYC.csv Avance2_3_4/data_sources/
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
