@@ -38,15 +38,15 @@ jobs:
           docker build -f Dockerfile.transform -t etl-transform:v1 .
 
       # Paso 4: Ejecuta la tarea de ingesta, montando el volumen
-      # ¡CORRECCIÓN AQUÍ! Se monta el volumen a /app/raw_data para que el archivo de salida
-      # persista en la misma ubicación que el transform.py espera.
+      # ¡CORRECCIÓN AQUÍ! Se monta el volumen a /app/data_sources para que el script de ingesta
+      # encuentre el archivo de entrada. También se monta a /app/data para persistir la salida.
       - name: Run Ingest Data Task
-        run: docker run --rm -v ${{ github.workspace }}/Avance2_3_4/raw_data:/app/raw_data etl-ingesta:v1
+        run: docker run --rm -v ${{ github.workspace }}/Avance2_3_4/raw_data:/app/data_sources -v ${{ github.workspace }}/Avance2_3_4/raw_data:/app/data etl-ingesta:v1
 
       # Paso 5: Ejecuta la tarea de transformación, montando los volúmenes
-      # El script de transformación leerá ahora el archivo que el paso anterior guardó.
+      # Se montan las carpetas de datos de forma consistente para que el script de Spark las encuentre.
       - name: Run Transform Data Task
-        run: docker run --rm -v ${{ github.workspace }}/Avance2_3_4/raw_data:/app/raw_data -v ${{ github.workspace }}/Avance2_3_4/silver_data:/app/silver_data -v ${{ github.workspace }}/Avance2_3_4/gold_data:/app/gold_data etl-transform:v1
+        run: docker run --rm -v ${{ github.workspace }}/Avance2_3_4/raw_data:/app/data -v ${{ github.workspace }}/Avance2_3_4/silver_data:/app/silver_data -v ${{ github.workspace }}/Avance2_3_4/gold_data:/app/gold_data etl-transform:v1
 
       - name: Set up Python for tests
         uses: actions/setup-python@v5
